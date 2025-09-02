@@ -1,0 +1,15 @@
+FROM php:8.2-apache
+
+RUN docker-php-ext-install pdo pdo-mysql
+
+COPY  ./public /var/wwwhtml
+
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
+
+
+
+
+# Un Dockerfile est un fichier texte qui contient les instructions pour construire une image Docker.
+# Dans ton cas, tu veux une image qui contient PHP + Apache ou Nginx.

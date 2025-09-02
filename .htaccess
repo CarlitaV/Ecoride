@@ -1,0 +1,52 @@
+<!--C’est un fichier de configuration pour le serveur Apache.
+Il permet de configurer certaines règles locales pour un dossier donné (souvent la racine du site).-->
+
+
+<!--Il active des fonctionnalités dans Apache sans toucher à la config principale.
+Il créer des URLs plus propres et user-friendly.
+Il permet de sécuriser certains dossiers.
+et personnalise le comportement du serveur web.
+
+Attention Si tu utilises Docker
+Vérifie que ton image Apache autorise l’utilisation des .htaccess.
+Parfois dans la config Apache, la directive AllowOverride doit être à All pour que .htaccess soit pris en compte.-->
+
+<!-------------------
+# Sécurité Apache - .htaccess
+----------------------->
+
+<!-- Masquer les infos du serveur pour plus de sécurité-->
+ServerTokens Prod        <!--Montre le minimum d'infos sur le serveur-->
+ServerSignature Off      <!--Désactive la signature Apache sur les pages d’erreur-->
+
+<!----- Redirection vers /public --->
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    <!-- Si l'URL ne commence pas par /public/ et n'est pas index.php,
+    on redirige vers /public/ pour que ce soit la racine publique-->
+    RewriteCond %{REQUEST_URI} !^/public/ [NC]   <!-- Ignore la casse (maj/min)-->
+    RewriteCond %{REQUEST_URI} !^/index.php [NC] <!-- Évite les boucles si déjà sur index.php-->
+    RewriteRule ^(.*)$ /public/$1 [L]            <!-- Redirection interne-->
+</IfModule>
+
+<!-- --- Sécurité des fichiers sensibles --->
+<FilesMatch "\.(env|log|sql|md|json|lock|yml|yaml|ini)$"> 
+    Require all denied    <!-- Bloque l'accès aux fichiers sensibles-->
+</FilesMatch>
+
+<!-- --- Protection des dossiers importants --->
+<DirectoryMatch "(config|src|tests|storage|vendor|bootstrap|resources)">
+    Require all denied    <!-- Empêche l'accès direct à ces dossiers-->
+</DirectoryMatch>
+
+<!-- --- Headers de sécurité --->
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"  <!-- Empêche le navigateur de deviner le type MIME-->
+    Header always set X-Frame-Options "DENY"            <!-- Bloque l'affichage dans une iframe (protection clickjacking)-->
+    Header always set X-XSS-Protection "1; mode=block"  <!-- Active la protection contre les attaques XSS-->
+    <!--Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"-->
+    <!-- -> A activer uniquement si tu utilises HTTPS (force HTTPS strict)--> A VOIR
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    <!-- Limite les sources de scripts et styles pour améliorer la sécurité-->
+</IfModule>

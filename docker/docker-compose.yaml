@@ -1,0 +1,47 @@
+# Ce dossier sert à décrire et lancer plusieurs conteneurs Docker en même temps comme s’ils formaient un seul environnement de travail.
+#Exemple imager "Démarre-moi un serveur PHP, une base de données MySQL et un serveur Nginx, configure-les pour qu’ils puissent se parler, et monte tel dossier de mon PC dans le conteneur."
+
+version: "3.8"
+
+services:
+  # Service APP : Votre serveur web avec PHP
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecoride
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    # Les variables d'environnement de votre application
+    environment:
+      # L'hôte est le nom du service Docker Compose
+      DB_HOST: db
+      # Les variables sont importées du fichier .env
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      STORAGE_PATH: /var/www/html/storage
+
+  # Service DB : Ma base de données MySQL
+  #Service db de ma base MySQL
+#permet d’importer automatiquement mon fichier SQL au premier démarrage.
+  db:
+    image: mysql:8.0
+    container_name: ecoride
+    restart: unless-stopped
+    # Les variables d'environnement pour MySQL
+    environment:
+      # On utilise les mêmes noms de variables pour plus de clarté
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      # Assurez-vous que le chemin vers votre fichier SQL est correct
+      - ./sql/ecoride.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  db_data:
